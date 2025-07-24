@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # NestJS Backend
+  server:
+    build: ./server
+    container_name: filemind-server
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/filemind
+      - ELASTICSEARCH_NODE=http://elasticsearch:9200
+    depends_on:
+      - mongo
+      - elasticsearch
+
+  # React Frontend
+  client:
+    build: ./client
+    container_name: filemind-client
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_BASE_URL=http://server:3000
+    depends_on:
+      - server
+
+  # MongoDB Database
+  mongo:
+    image: mongo:5
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200" 
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+
+volumes:
+  mongo_data:
